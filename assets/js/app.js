@@ -87,14 +87,18 @@ const STORAGE_KEYS = {
 // Priority order in the viewer stays: ROM/log runtime -> local dex -> web APIs.
 const LOCAL_DEX = window.LOCAL_DEX_DATA || { pokemon: {}, moves: {}, items: {}, abilities: {}, spriteBasePath: '' };
 const LOCAL_DEX_INDEXES = { pokemon: null, moves: null, items: null, abilities: null };
+const SPRITE_MODE_AUTO = 'auto';
+const SPRITE_MODE_VERSION = 'version';
+const SPRITE_MODE_SHOWDOWN_ANIMATED = 'showdown-animated';
 const SPRITE_MODE_MODERN_3D = 'modern-3d';
 const SPRITE_MODE_LAST_GEN_ANIMATED = 'last-gen-animated';
 const SPRITE_MODE_STATIC = 'static';
-let spriteMode = safeLocalStorageGet(STORAGE_KEYS.spriteMode) || SPRITE_MODE_LAST_GEN_ANIMATED;
-if (spriteMode === 'version') spriteMode = SPRITE_MODE_STATIC;
-if (spriteMode === SPRITE_MODE_MODERN_3D) spriteMode = SPRITE_MODE_LAST_GEN_ANIMATED;
-if (![SPRITE_MODE_MODERN_3D, SPRITE_MODE_STATIC, SPRITE_MODE_LAST_GEN_ANIMATED].includes(spriteMode)) {
-  spriteMode = SPRITE_MODE_LAST_GEN_ANIMATED;
+let spriteMode = safeLocalStorageGet(STORAGE_KEYS.spriteMode) || SPRITE_MODE_AUTO;
+if (spriteMode === SPRITE_MODE_STATIC) spriteMode = SPRITE_MODE_VERSION;
+if (spriteMode === SPRITE_MODE_LAST_GEN_ANIMATED) spriteMode = SPRITE_MODE_SHOWDOWN_ANIMATED;
+if (spriteMode === SPRITE_MODE_MODERN_3D) spriteMode = SPRITE_MODE_AUTO;
+if (![SPRITE_MODE_AUTO, SPRITE_MODE_VERSION, SPRITE_MODE_SHOWDOWN_ANIMATED].includes(spriteMode)) {
+  spriteMode = SPRITE_MODE_AUTO;
 }
 
 function getLocalDexCollection(kind) {
@@ -171,38 +175,43 @@ function getSpriteBasePath() {
   return LOCAL_DEX.spriteBasePath || './assets/sprites/local-dex';
 }
 
+function getEffectiveSpriteMode(modeOverride = spriteMode) {
+  if (modeOverride === SPRITE_MODE_SHOWDOWN_ANIMATED) return SPRITE_MODE_SHOWDOWN_ANIMATED;
+  if (modeOverride === SPRITE_MODE_VERSION) return SPRITE_MODE_VERSION;
+  const gen = Number(detectedVersionInfo?.gen || 4);
+  return gen >= 7 ? SPRITE_MODE_SHOWDOWN_ANIMATED : SPRITE_MODE_VERSION;
+}
+
 function isAnimatedSpriteMode() {
-  return spriteMode === SPRITE_MODE_LAST_GEN_ANIMATED;
+  return getEffectiveSpriteMode() === SPRITE_MODE_SHOWDOWN_ANIMATED;
 }
 
 function isModern3DSpriteMode() {
-  return spriteMode === SPRITE_MODE_MODERN_3D;
+  return false;
 }
 
 function isStaticSpriteMode() {
-  return spriteMode === SPRITE_MODE_STATIC;
+  return getEffectiveSpriteMode() === SPRITE_MODE_VERSION;
 }
 
 function getVersionSpriteProfile(modeOverride = spriteMode) {
-  // The local sprite pack only ships animated Gen 5 battle sprites.
-  // "last-gen-animated" therefore means "best animated local sprites available".
-  if (modeOverride === SPRITE_MODE_LAST_GEN_ANIMATED) {
+  // The offline local pack only ships animated Gen 5 battle sprites.
+  // In Showdown mode we still keep those as an extra local fallback.
+  if (getEffectiveSpriteMode(modeOverride) === SPRITE_MODE_SHOWDOWN_ANIMATED) {
     return { generationFolder: 'generation-v', versionFolder: 'black-white', animated: true };
   }
   const sg = String(detectedVersionInfo?.spriteGen || '').toLowerCase();
   if (sg === 'diamond-pearl') return { generationFolder: 'generation-iv', versionFolder: 'diamond-pearl', animated: false };
   if (sg === 'platinum') return { generationFolder: 'generation-iv', versionFolder: 'platinum', animated: false };
   if (sg === 'heartgold-soulsilver') return { generationFolder: 'generation-iv', versionFolder: 'heartgold-soulsilver', animated: false };
-  if (sg === 'black-white' || sg === 'black-white-2') {
-    return { generationFolder: 'generation-v', versionFolder: 'black-white', animated: modeOverride !== SPRITE_MODE_STATIC };
-  }
+  if (sg === 'black-white' || sg === 'black-white-2') return { generationFolder: 'generation-v', versionFolder: 'black-white', animated: false };
   if (sg === 'x-y') return { generationFolder: 'generation-vi', versionFolder: 'x-y', animated: false };
   if (sg === 'omegaruby-alphasapphire') return { generationFolder: 'generation-vi', versionFolder: 'omegaruby-alphasapphire', animated: false };
   if (sg === 'ultra-sun-ultra-moon') return { generationFolder: 'generation-vii', versionFolder: 'ultra-sun-ultra-moon', animated: false };
   const gen = Number(detectedVersionInfo?.gen || 4);
   if (gen >= 7) return { generationFolder: 'generation-vii', versionFolder: 'ultra-sun-ultra-moon', animated: false };
   if (gen === 6) return { generationFolder: 'generation-vi', versionFolder: 'x-y', animated: false };
-  if (gen === 5) return { generationFolder: 'generation-v', versionFolder: 'black-white', animated: modeOverride !== SPRITE_MODE_STATIC };
+  if (gen === 5) return { generationFolder: 'generation-v', versionFolder: 'black-white', animated: false };
   return { generationFolder: 'generation-iv', versionFolder: 'platinum', animated: false };
 }
 
@@ -336,6 +345,41 @@ function resolveLocalAnimeLibrarySpriteCandidates(identifier = '', shiny = false
   ]);
 }
 
+function getCustomVersionSpritePackPath() {
+  const gen = Number(detectedVersionInfo?.gen || 0);
+  if (gen >= 4 && gen <= 6) return `./gen${gen}`;
+  return '';
+}
+
+function resolveCustomVersionSpriteCandidates(identifier = '', shiny = false) {
+  const base = getCustomVersionSpritePackPath();
+  if (!base || !identifier) return [];
+  const gen = Number(detectedVersionInfo?.gen || 0);
+  const localPokemon = getLocalPokemonEntry(identifier);
+  const sourceNames = uniqueNonEmpty([
+    identifier,
+    localPokemon?.slug,
+    localPokemon?.nameEn,
+    localPokemon?.nameFr,
+  ]);
+  const slugCandidates = uniqueNonEmpty(sourceNames.flatMap(name => {
+    const rawCandidates = uniqueNonEmpty([
+      ...getPokemonSlugCandidates(name),
+      moveSlug(name),
+    ]);
+    return rawCandidates.flatMap(expandAnimeLibrarySlugAliases);
+  }));
+  const candidates = [];
+  const extensions = gen === 5 ? ['gif', 'png'] : ['png', 'gif'];
+  slugCandidates.forEach(slug => {
+    extensions.forEach(ext => {
+      if (shiny) candidates.push(`${base}/${slug}-shiny.${ext}`);
+      candidates.push(`${base}/${slug}.${ext}`);
+    });
+  });
+  return uniqueNonEmpty(candidates);
+}
+
 function getSpriteLookupId(spriteId, slugOrIdentifier = '') {
   const directId = Number(spriteId);
   if (Number.isFinite(directId) && directId > 0) return directId;
@@ -354,8 +398,11 @@ function buildPokemonSpriteCandidateUrls({
 } = {}) {
   const baseIdentifier = slug || identifier || '';
   const resolvedId = getSpriteLookupId(spriteId, baseIdentifier);
+  const versionPackUrls = baseIdentifier
+    ? resolveCustomVersionSpriteCandidates(baseIdentifier, shiny)
+    : [];
   const staticUrls = resolvedId
-    ? resolveLocalPokemonSpriteCandidates(resolvedId, shiny, baseIdentifier, formId, SPRITE_MODE_STATIC)
+    ? resolveLocalPokemonSpriteCandidates(resolvedId, shiny, baseIdentifier, formId, SPRITE_MODE_VERSION)
     : [];
   const modern3dUrls = resolvedId
     ? resolveLocalPokemonModern3DCandidates(resolvedId, shiny, baseIdentifier, formId)
@@ -369,6 +416,7 @@ function buildPokemonSpriteCandidateUrls({
   if (isModern3DSpriteMode()) {
     return uniqueNonEmpty([
       ...modern3dUrls,
+      ...versionPackUrls,
       ...staticUrls,
       ...remoteUrls,
       ...animeLibraryUrls,
@@ -376,7 +424,9 @@ function buildPokemonSpriteCandidateUrls({
   }
   if (isStaticSpriteMode()) {
     return uniqueNonEmpty([
+      ...versionPackUrls,
       ...staticUrls,
+      ...modern3dUrls,
       ...remoteUrls,
       ...animeLibraryUrls,
     ]);
@@ -384,6 +434,7 @@ function buildPokemonSpriteCandidateUrls({
   const animatedUrls = baseIdentifier ? getAnimatedSpriteCandidates(baseIdentifier, shiny) : [];
   return uniqueNonEmpty([
     ...animatedUrls,
+    ...versionPackUrls,
     ...staticUrls,
     ...modern3dUrls,
     ...remoteUrls,
@@ -402,9 +453,9 @@ function resolveLocalItemSpriteCandidates(identifier) {
 }
 
 function setSpriteMode(mode) {
-  const nextMode = [SPRITE_MODE_MODERN_3D, SPRITE_MODE_LAST_GEN_ANIMATED, SPRITE_MODE_STATIC].includes(mode)
-    ? (mode === SPRITE_MODE_MODERN_3D ? SPRITE_MODE_LAST_GEN_ANIMATED : mode)
-    : SPRITE_MODE_LAST_GEN_ANIMATED;
+  const nextMode = [SPRITE_MODE_AUTO, SPRITE_MODE_VERSION, SPRITE_MODE_SHOWDOWN_ANIMATED].includes(mode)
+    ? mode
+    : SPRITE_MODE_AUTO;
   spriteMode = nextMode;
   safeLocalStorageSet(STORAGE_KEYS.spriteMode, spriteMode);
   if (selectedName) renderDetail(selectedName, groupedTrainers[selectedName], selectedVersion);
@@ -412,12 +463,12 @@ function setSpriteMode(mode) {
 }
 
 function toggleSpriteMode() {
-  return setSpriteMode(isStaticSpriteMode() ? SPRITE_MODE_LAST_GEN_ANIMATED : SPRITE_MODE_STATIC);
+  return setSpriteMode(isAnimatedSpriteMode() ? SPRITE_MODE_VERSION : SPRITE_MODE_SHOWDOWN_ANIMATED);
 }
 
 function syncSpriteModeToggle() {
   const spriteCheck = document.getElementById('sprite-mode-check');
-  if (spriteCheck) spriteCheck.className = 'dd-check ' + (isStaticSpriteMode() ? 'on' : 'off');
+  if (spriteCheck) spriteCheck.className = 'dd-check ' + (isAnimatedSpriteMode() ? 'on' : 'off');
 }
 const UI_TEXT = {
   fr: {
@@ -13936,4 +13987,3 @@ window.addEventListener('load', () => {
     showVanillaBrowser();
   }
 });
-

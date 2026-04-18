@@ -1,7 +1,7 @@
-window.TRAINER_PORTRAIT_MANIFEST = {
+﻿window.TRAINER_PORTRAIT_MANIFEST = {
   "meta": {
     "source": "pkhex-gen6-local",
-    "generatedFrom": "bundled-runtime-assets"
+    "generatedFrom": "packaged-runtime"
   },
   "identity": {
     "archie": [

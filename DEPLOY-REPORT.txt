@@ -1,7 +1,0 @@
-Deploy folder: C:\Users\Jonatan\Documents\PokeFeur-deploy
-Total size: 1,55 GB
-Total files: 51186
-Largest file: luminescent_platinum_bd_fr.js (36,33 MB)
-Largest direct file count in one directory: 3579
-Vanilla JS files: 58
-Trainer portrait assets checked: 3428
