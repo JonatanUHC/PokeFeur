@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PokéFeur</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body class="lang-en" data-start-view="viewer">
+<div class="global-loading" id="global-loading">
+  <div class="global-loading-card">
+    <div class="football-spinner" aria-hidden="true">⚽</div>
+    <div class="global-loading-title" id="global-loading-title">Loading</div>
+    <div class="global-loading-sub" id="global-loading-sub">Preparing ROM data…</div>
+    <div class="global-loading-progress">
+      <div class="global-loading-progress-row">
+        <span class="global-loading-progress-text" id="global-loading-progress-text">0%</span>
+        <span id="global-loading-stage" class="global-loading-stage"></span>
+      </div>
+      <div class="global-loading-progress-track">
+        <div class="global-loading-progress-fill" id="global-loading-progress-fill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<header>
+  <div class="logo" onclick="navigateWithCurrentLang('./index.html')" title="Back to menu" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'" id="header-logo">Poké<span>Feur</span></div>
+  <div class="header-right">
+    <span id="gen-badge" style="display:none;font-family:'Press Start 2P',monospace;font-size:7px;padding:5px 10px;background:rgba(247,201,72,.15);color:var(--gold);border:1px solid rgba(247,201,72,.3);border-radius:8px;letter-spacing:1px;"></span>
+    <button class="calc-open-btn" onclick="navigateWithCurrentLang('./vanilla.html')">📚 <span class="fr-only">Vanilla</span><span class="en-only">Vanilla</span></button>
+    <div class="dropdown" id="options-dropdown">
+      <button class="dropdown-btn" onclick="toggleDropdown()">⚙️ <span class="fr-only">Options</span><span class="en-only">Options</span> <span class="dd-arrow">▾</span></button>
+      <div class="dropdown-panel">
+        <div class="dd-section"><span class="fr-only">Langue</span><span class="en-only">Language</span></div>
+        <div class="dd-row" style="justify-content:center">
+          <div class="dd-toggle-group">
+            <button class="dd-toggle active" id="btn-fr" onclick="setLang('fr')">🇫🇷 FR</button>
+            <button class="dd-toggle" id="btn-en" onclick="setLang('en')">🇬🇧 EN</button>
+          </div>
+        </div>
+        <div class="dd-separator"></div>
+        <div class="dd-section"><span class="fr-only">Affichage des stats</span><span class="en-only">Stat display</span></div>
+        <div class="dd-row" onclick="toggleSection('ivs')"><span class="dd-row-label"><span class="fr-only">Afficher IVs</span><span class="en-only">Show IVs</span></span><span class="dd-check on" id="toggle-ivs">✓</span></div>
+        <div class="dd-row" onclick="toggleSection('evs')"><span class="dd-row-label"><span class="fr-only">Afficher EVs</span><span class="en-only">Show EVs</span></span><span class="dd-check on" id="toggle-evs">✓</span></div>
+        <div class="dd-row" onclick="toggleSection('stats')"><span class="dd-row-label"><span class="fr-only">Afficher Stats</span><span class="en-only">Show Stats</span></span><span class="dd-check on" id="toggle-stats">✓</span></div>
+        <div class="dd-row" onclick="toggleAppliedStatsMode()"><span class="dd-row-label"><span class="fr-only">Stats avec IVs / EVs</span><span class="en-only">Stats with IVs / EVs</span></span><span class="dd-check on" id="toggle-applied-stats">✓</span></div>
+        <div class="dd-separator"></div>
+        <div class="dd-section"><span class="fr-only">Attaques</span><span class="en-only">Moves</span></div>
+        <div class="dd-row" onclick="toggleLearnset()"><span class="dd-row-label"><span class="fr-only">4 dernières attaques par niveau</span><span class="en-only">4 latest level-up moves</span></span><span class="dd-check off" id="learnset-check">✓</span></div>
+        <div class="dd-separator"></div>
+        <div class="dd-section"><span class="fr-only">Sprites</span><span class="en-only">Sprites</span></div>
+        <div class="dd-row" onclick="toggleSpriteMode()"><span class="dd-row-label"><span class="fr-only">Sprites fixes</span><span class="en-only">Static sprites</span></span><span class="dd-check off" id="sprite-mode-check">✓</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="search-wrap">
+      <div class="search-group">
+        <div class="search-label" id="search-trainer-label">Trainer</div>
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Search a trainer…" autocomplete="off" spellcheck="false">
+          <span class="search-icon">⌕</span>
+        </div>
+      </div>
+      <div class="search-group">
+        <div class="search-label" id="search-pokemon-label">Pokémon</div>
+        <div class="search-box">
+          <input type="text" id="search-pokemon-input" placeholder="Search a Pokémon…" autocomplete="off" spellcheck="false">
+          <span class="search-icon">⚡</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-tools" id="sidebar-tools">
+      <div class="sidebar-tools-title"><span class="fr-only">Chargement</span><span class="en-only">Load files</span></div>
+      <label class="dd-file-btn">📂 <span class="fr-only">Charger JSON / LOG / ROM</span><span class="en-only">Load JSON / LOG / ROM</span><input type="file" id="file-input" accept=".json,.log,.txt,.nds,.3ds,.cxi"></label>
+      <label class="dd-file-btn">📁 <span class="fr-only">Charger dossier BDSP / Lumi</span><span class="en-only">Load BDSP / Lumi folder</span><input type="file" id="bdsp-folder-input" webkitdirectory directory multiple style="display:none"></label>
+      <label class="dd-file-btn">📦 <span class="fr-only">Charger .rar BDSP / Lumi</span><span class="en-only">Load BDSP / Lumi .rar</span><input type="file" id="bdsp-archive-input" accept=".zip,.rar,.7z" style="display:none"></label>
+      <label class="dd-file-btn">📁 <span class="fr-only">Charger dossier SWSH / mod</span><span class="en-only">Load SWSH / mod folder</span><input type="file" id="swsh-folder-input" webkitdirectory directory multiple style="display:none"></label>
+      <label class="dd-file-btn">📦 <span class="fr-only">Charger .rar SWSH / mod</span><span class="en-only">Load SWSH / mod .rar</span><input type="file" id="swsh-archive-input" accept=".zip,.rar,.7z" style="display:none"></label>
+      <label class="dd-file-btn">📁 <span class="fr-only">Charger dossier SV / mod</span><span class="en-only">Load SV / mod folder</span><input type="file" id="sv-folder-input" webkitdirectory directory multiple style="display:none"></label>
+      <label class="dd-file-btn">📦 <span class="fr-only">Charger .rar SV / mod</span><span class="en-only">Load SV / mod .rar</span><input type="file" id="sv-archive-input" accept=".zip,.rar,.7z" style="display:none"></label>
+      <button class="dd-file-btn dd-file-btn-danger" onclick="resetCurrentView()">🗑️ <span class="fr-only">Réinitialiser</span><span class="en-only">Reset</span></button>
+    </div>
+    <div class="stats-bar"><span id="stats-text">No file loaded</span></div>
+    <div class="trainer-list" id="trainer-list">
+      <div style="height:200px"></div>
+    </div>
+  </aside>
+  <main class="detail" id="detail">
+    <div class="empty"><div class="ball">⚽</div><p><span class="fr-only">Chargement du guide…</span><span class="en-only">Loading guide…</span></p></div>
+  </main>
+</div>
+
+<!-- DAMAGE CALCULATOR PANEL -->
+<div class="calc-panel" id="calc-panel">
+  <div class="calc-header">
+    <h2>⚔️ CALC DÉGÂTS</h2>
+    <button class="calc-close" onclick="toggleCalc()">✕</button>
+  </div>
+  <div class="calc-body">
+    <div id="calc-version-info" class="calc-version-badge" style="display:none"></div>
+
+    <!-- ATTAQUANT -->
+    <div class="calc-section">
+      <div class="calc-section-title">⚡ Attaquant</div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Pokémon</div>
+          <input class="calc-input" id="atk-pokemon" placeholder="Ex: Garchomp" oninput="onAtkPokemonChange()">
+        </div>
+        <div>
+          <div class="calc-label">Niveau</div>
+          <input class="calc-input" id="atk-level" type="number" value="100" min="1" max="100">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Nature</div>
+          <select class="calc-select" id="atk-nature" onchange="updateCalcStats('atk')">
+            <option value="Hardy">Hardy / Hardi</option>
+            <option value="Lonely">Lonely / Solitaire</option>
+            <option value="Brave">Brave / Courageux</option>
+            <option value="Adamant" selected>Adamant / Rigide</option>
+            <option value="Naughty">Naughty / Mauvais</option>
+            <option value="Bold">Bold / Assuré</option>
+            <option value="Docile">Docile</option>
+            <option value="Relaxed">Relaxed / Relax</option>
+            <option value="Impish">Impish / Malin</option>
+            <option value="Lax">Lax / Lâche</option>
+            <option value="Timid">Timid / Timide</option>
+            <option value="Hasty">Hasty / Pressé</option>
+            <option value="Serious">Serious / Sérieux</option>
+            <option value="Jolly">Jolly / Jovial</option>
+            <option value="Naive">Naive / Naïf</option>
+            <option value="Modest">Modest / Modeste</option>
+            <option value="Mild">Mild / Doux</option>
+            <option value="Quiet">Quiet / Discret</option>
+            <option value="Bashful">Bashful / Pudique</option>
+            <option value="Rash">Rash / Foufou</option>
+            <option value="Calm">Calm / Calme</option>
+            <option value="Gentle">Gentle / Gentil</option>
+            <option value="Sassy">Sassy / Effronté</option>
+            <option value="Careful">Careful / Prudent</option>
+            <option value="Quirky">Quirky / Bizarre</option>
+          </select>
+        </div>
+        <div>
+          <div class="calc-label">IVs Atk</div>
+          <input class="calc-input" id="atk-iv" type="number" value="31" min="0" max="31" onchange="updateCalcStats('atk')">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">EVs Atk</div>
+          <input class="calc-input" id="atk-ev" type="number" value="252" min="0" max="252" onchange="updateCalcStats('atk')">
+        </div>
+        <div>
+          <div class="calc-label">Stat Atk (auto)</div>
+          <input class="calc-input" id="atk-stat-display" readonly style="color:var(--accent);background:rgba(30,48,88,.5);">
+        </div>
+      </div>
+      <div id="atk-stats-preview" style="margin-top:8px;display:none;"></div>
+    </div>
+
+    <button class="calc-swap-btn" onclick="swapPokemon()" title="Échanger attaquant / défenseur">⇅ Échanger attaquant / défenseur</button>
+
+    <!-- DÉFENSEUR -->
+    <div class="calc-section">
+      <div class="calc-section-title">🛡️ Défenseur</div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Pokémon</div>
+          <input class="calc-input" id="def-pokemon" placeholder="Ex: Milotic" oninput="onDefPokemonChange()">
+        </div>
+        <div>
+          <div class="calc-label">Niveau</div>
+          <input class="calc-input" id="def-level" type="number" value="100" min="1" max="100">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Nature</div>
+          <select class="calc-select" id="def-nature" onchange="updateCalcStats('def')">
+            <option value="Hardy">Hardy / Hardi</option>
+            <option value="Bold" selected>Bold / Assuré</option>
+            <option value="Docile">Docile</option>
+            <option value="Relaxed">Relaxed / Relax</option>
+            <option value="Impish">Impish / Malin</option>
+            <option value="Lax">Lax / Lâche</option>
+            <option value="Timid">Timid / Timide</option>
+            <option value="Hasty">Hasty / Pressé</option>
+            <option value="Serious">Serious / Sérieux</option>
+            <option value="Jolly">Jolly / Jovial</option>
+            <option value="Naive">Naive / Naïf</option>
+            <option value="Modest">Modest / Modeste</option>
+            <option value="Mild">Mild / Doux</option>
+            <option value="Quiet">Quiet / Discret</option>
+            <option value="Bashful">Bashful / Pudique</option>
+            <option value="Rash">Rash / Foufou</option>
+            <option value="Calm">Calm / Calme</option>
+            <option value="Gentle">Gentle / Gentil</option>
+            <option value="Sassy">Sassy / Effronté</option>
+            <option value="Careful">Careful / Prudent</option>
+            <option value="Quirky">Quirky / Bizarre</option>
+            <option value="Lonely">Lonely / Solitaire</option>
+            <option value="Brave">Brave / Courageux</option>
+            <option value="Adamant">Adamant / Rigide</option>
+            <option value="Naughty">Naughty / Mauvais</option>
+          </select>
+        </div>
+        <div>
+          <div class="calc-label">IVs Déf</div>
+          <input class="calc-input" id="def-iv" type="number" value="31" min="0" max="31" onchange="updateCalcStats('def')">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">EVs Déf</div>
+          <input class="calc-input" id="def-ev" type="number" value="252" min="0" max="252" onchange="updateCalcStats('def')">
+        </div>
+        <div>
+          <div class="calc-label">Stat Déf (auto)</div>
+          <input class="calc-input" id="def-stat-display" readonly style="color:var(--accent);background:rgba(30,48,88,.5);">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">IVs HP</div>
+          <input class="calc-input" id="def-hp-iv" type="number" value="31" min="0" max="31" onchange="updateCalcStats('def')">
+        </div>
+        <div>
+          <div class="calc-label">EVs HP</div>
+          <input class="calc-input" id="def-hp-ev" type="number" value="252" min="0" max="252" onchange="updateCalcStats('def')">
+        </div>
+      </div>
+      <div class="calc-row-full">
+        <div class="calc-label">HP total (auto)</div>
+        <input class="calc-input" id="def-hp-display" readonly style="color:var(--green);background:rgba(30,48,88,.5);">
+      </div>
+      <div id="def-stats-preview" style="margin-top:8px;display:none;"></div>
+    </div>
+
+    <!-- ATTAQUE -->
+    <div class="calc-section">
+      <div class="calc-section-title">💥 Attaque</div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Nom de l'attaque</div>
+          <input class="calc-input" id="move-name" placeholder="Ex: Earthquake" oninput="onMoveChange()">
+        </div>
+        <div>
+          <div class="calc-label">Puissance</div>
+          <input class="calc-input" id="move-power" type="number" value="100" min="1" max="999">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Catégorie</div>
+          <select class="calc-select" id="move-category">
+            <option value="physical">Physique</option>
+            <option value="special">Spéciale</option>
+          </select>
+        </div>
+        <div>
+          <div class="calc-label">Type attaque</div>
+          <select class="calc-select" id="move-type">
+            <option value="Normal">Normal</option>
+            <option value="Fire">Feu</option>
+            <option value="Water">Eau</option>
+            <option value="Electric">Électrik</option>
+            <option value="Grass">Plante</option>
+            <option value="Ice">Glace</option>
+            <option value="Fighting">Combat</option>
+            <option value="Poison">Poison</option>
+            <option value="Ground">Sol</option>
+            <option value="Flying">Vol</option>
+            <option value="Psychic">Psy</option>
+            <option value="Bug">Insecte</option>
+            <option value="Rock">Roche</option>
+            <option value="Ghost">Spectre</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Ténèbres</option>
+            <option value="Steel">Acier</option>
+            <option value="Fairy">Fée</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERRAIN / CONDITIONS -->
+    <div class="calc-section">
+      <div class="calc-section-title">🌍 Conditions de combat</div>
+      <div class="calc-row">
+        <div>
+          <div class="calc-label">Rang Atk attaquant</div>
+          <select class="calc-select" id="atk-boost">
+            <option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option>
+            <option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option>
+            <option value="0" selected>0</option>
+            <option value="1">+1</option><option value="2">+2</option><option value="3">+3</option>
+            <option value="4">+4</option><option value="5">+5</option><option value="6">+6</option>
+          </select>
+        </div>
+        <div>
+          <div class="calc-label">Rang Déf défenseur</div>
+          <select class="calc-select" id="def-boost">
+            <option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option>
+            <option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option>
+            <option value="0" selected>0</option>
+            <option value="1">+1</option><option value="2">+2</option><option value="3">+3</option>
+            <option value="4">+4</option><option value="5">+5</option><option value="6">+6</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-check"><input type="checkbox" id="field-stab"><label for="field-stab">STAB (même type)</label></div>
+      <div class="field-check"><input type="checkbox" id="field-burn"><label for="field-burn">Brûlure (attaquant)</label></div>
+      <div class="field-check"><input type="checkbox" id="field-reflect"><label for="field-reflect">Mur Lumière (Réflexion)</label></div>
+      <div class="field-check"><input type="checkbox" id="field-lightscreen"><label for="field-lightscreen">Voile Lumière</label></div>
+      <div class="field-check"><input type="checkbox" id="field-crit"><label for="field-crit">Coup critique</label></div>
+      <div style="margin-top:8px;">
+        <div class="calc-label">Efficacité type (auto)</div>
+        <input class="calc-input" id="type-effectiveness" readonly placeholder="Calculé automatiquement" style="background:rgba(30,48,88,.5);">
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculateDamage()">⚡ CALCULER LES DÉGÂTS</button>
+
+    <div class="calc-result" id="calc-result" style="display:none">
+      <div class="calc-result-title">RÉSULTAT</div>
+      <div class="calc-result-main" id="calc-dmg-pct">—</div>
+      <div class="calc-result-range" id="calc-dmg-range">—</div>
+      <div class="calc-result-bar"><div class="calc-result-bar-fill" id="calc-bar-fill" style="width:0%"></div></div>
+      <div class="calc-result-ohko" id="calc-ohko-label">—</div>
+      <div style="margin-top:10px;font-size:10px;color:var(--muted);font-family:'Exo 2',sans-serif;" id="calc-formula-desc"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="./bw_vanilla_data.js"></script>
+<script src="./nds_text_tables.js"></script>
+<script src="./nds_rom_parser.js"></script>
+<script src="./vanilla_exports/manifest.js"></script>
+<script src="./assets/js/version-data.js"></script>
+<script src="./assets/js/local-dex-data.js"></script>
+<script src="./assets/js/trainer-portrait-data.js"></script>
+<script src="./assets/js/app.js"></script>
+<script src="./assets/js/parsers/bdsp-custom-parser.global.js"></script>
+<script src="./assets/vendor/libarchivejs/libarchive.global.js"></script>
+<script src="./assets/vendor/libarchivejs/libarchive-inline.js"></script>
+<script src="./assets/js/bdsp-folder-bridge.js"></script>
+<script src="./assets/js/sv-folder-bridge.js"></script>
+<script src="./assets/js/swsh-folder-bridge.js"></script>
+</body>
+</html>

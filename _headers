@@ -1,0 +1,43 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/trainer_viewer_6_1.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/vanilla.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/vendor/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/bw_vanilla_data.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nds_text_tables.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/nds_rom_parser.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/vanilla_exports/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/sprites/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/trainer-portraits/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/spritespokemonanime/*
+  Cache-Control: public, max-age=31536000, immutable

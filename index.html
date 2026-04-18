@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokéFeur</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#080c14;--surface:#0d1626;--card:#111d35;--border:#1e3058;--accent:#4fc3f7;--purple:#a78bfa;--text:#e2eaf8;--muted:#6b87b0}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;display:grid;place-items:center;padding:24px}
+    .wrap{width:min(920px,100%);background:linear-gradient(180deg,rgba(17,29,53,.96),rgba(11,17,29,.98));border:1px solid var(--border);border-radius:20px;padding:32px;box-shadow:0 16px 50px rgba(0,0,0,.35)}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px}
+    h1{margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:clamp(14px,2vw,22px);line-height:1.8;color:var(--accent)}
+    p{margin:0 0 24px;color:var(--muted);font-size:15px;line-height:1.7}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    a{display:flex;align-items:center;justify-content:center;min-height:72px;padding:16px 18px;border-radius:14px;background:var(--card);border:1px solid var(--border);color:var(--text);text-decoration:none;font-weight:800;transition:.2s}
+    a:hover{border-color:var(--accent);box-shadow:0 0 18px rgba(79,195,247,.16);transform:translateY(-1px)}
+    .sub{font-size:11px;color:var(--purple);display:block;margin-top:4px}
+    .lang-toggle{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+    .lang-toggle button{border:none;background:transparent;color:var(--muted);padding:6px 10px;border-radius:7px;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer}
+    .lang-toggle button.active{background:rgba(79,195,247,.14);color:var(--accent)}
+    body.lang-en .fr-only{display:none!important}
+    body.lang-fr .en-only{display:none!important}
+    body.lang-en .en-only{display:revert!important}
+    body.lang-fr .fr-only{display:revert!important}
+    @media(max-width:640px){.topbar{flex-direction:column}.lang-toggle{align-self:flex-start}}
+  </style>
+</head>
+<body class="lang-en">
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>POKÉFEUR made with love ❤️</h1>
+        <p class="fr-only">Bienvenue sur PokéFeur, un viewer de dresseurs Pokémon conçu pour charger des logs, des ROMs vanilla ou randomisées, puis explorer rapidement les équipes, niveaux, sprites et informations utiles des dresseurs.</p>
+        <p class="en-only">Welcome to PokéFeur, a Pokémon trainer viewer designed to load logs, vanilla or randomized ROMs, and quickly explore trainer teams, levels, sprites, and useful trainer data.</p>
+      </div>
+      <div class="lang-toggle">
+        <button id="index-fr" type="button" onclick="setIndexLang('fr')">FR</button>
+        <button id="index-en" type="button" onclick="setIndexLang('en')">EN</button>
+      </div>
+    </div>
+    <div class="grid">
+      <a id="index-viewer-link" href="./trainer_viewer_6_1.html?lang=en"><span class="fr-only">Ouvrir le viewer principal</span><span class="en-only">Open the main viewer</span><span class="sub fr-only">Logs + NDS + 3DS + randomizers</span><span class="sub en-only">Logs + NDS + 3DS + randomizers</span></a>
+      <a id="index-vanilla-link" href="./vanilla.html?lang=en"><span class="fr-only">Ouvrir la page vanilla</span><span class="en-only">Open the vanilla page</span><span class="sub fr-only">ROMs vanilla par jeu et par région</span><span class="sub en-only">Vanilla ROMs by game and region</span></a>
+    </div>
+  </div>
+  <script>
+    function setIndexLang(lang) {
+      document.body.className = 'lang-' + lang;
+      document.documentElement.lang = lang;
+      const fr = document.getElementById('index-fr');
+      const en = document.getElementById('index-en');
+      const viewer = document.getElementById('index-viewer-link');
+      const vanilla = document.getElementById('index-vanilla-link');
+      if (fr) fr.classList.toggle('active', lang === 'fr');
+      if (en) en.classList.toggle('active', lang === 'en');
+      if (viewer) viewer.href = './trainer_viewer_6_1.html?lang=' + lang;
+      if (vanilla) vanilla.href = './vanilla.html?lang=' + lang;
+      try { localStorage.setItem('trainerViewer.lang', lang); } catch (e) {}
+      document.title = 'PokéFeur';
+    }
+    let initialLang = 'en';
+    try {
+      const queryLang = new URLSearchParams(window.location.search).get('lang');
+      const saved = localStorage.getItem('trainerViewer.lang');
+      if (queryLang === 'fr' || queryLang === 'en') initialLang = queryLang;
+      else if (saved === 'fr' || saved === 'en') initialLang = saved;
+    } catch (e) {}
+    setIndexLang(initialLang);
+  </script>
+</body>
+</html>
