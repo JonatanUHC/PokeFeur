@@ -82,7 +82,12 @@ const translationCache = { pokemonNamesPromise: null, moveNamesPromise: null, po
 const STORAGE_KEYS = {
   lang: 'trainerViewer.lang',
   spriteMode: 'trainerViewer.spriteMode',
+  teamLayout: 'trainerViewer.teamLayout.v2',
 };
+const TEAM_LAYOUT_VERTICAL = 'vertical';
+const TEAM_LAYOUT_HORIZONTAL = 'horizontal';
+let teamLayout = safeLocalStorageGet(STORAGE_KEYS.teamLayout) || TEAM_LAYOUT_HORIZONTAL;
+if (![TEAM_LAYOUT_VERTICAL, TEAM_LAYOUT_HORIZONTAL].includes(teamLayout)) teamLayout = TEAM_LAYOUT_VERTICAL;
 // Local offline dex data generated from CSV + Showdown resources.
 // Priority order in the viewer stays: ROM/log runtime -> local dex -> web APIs.
 const LOCAL_DEX = window.LOCAL_DEX_DATA || { pokemon: {}, moves: {}, items: {}, abilities: {}, spriteBasePath: '' };
@@ -469,6 +474,22 @@ function toggleSpriteMode() {
 function syncSpriteModeToggle() {
   const spriteCheck = document.getElementById('sprite-mode-check');
   if (spriteCheck) spriteCheck.className = 'dd-check ' + (isAnimatedSpriteMode() ? 'on' : 'off');
+}
+
+function setTeamLayout(layout) {
+  teamLayout = layout === TEAM_LAYOUT_HORIZONTAL ? TEAM_LAYOUT_HORIZONTAL : TEAM_LAYOUT_VERTICAL;
+  safeLocalStorageSet(STORAGE_KEYS.teamLayout, teamLayout);
+  syncTeamLayoutToggle();
+  if (selectedName) renderDetail(selectedName, groupedTrainers[selectedName], selectedVersion);
+}
+
+function toggleTeamLayout() {
+  setTeamLayout(teamLayout === TEAM_LAYOUT_HORIZONTAL ? TEAM_LAYOUT_VERTICAL : TEAM_LAYOUT_HORIZONTAL);
+}
+
+function syncTeamLayoutToggle() {
+  const layoutCheck = document.getElementById('toggle-team-layout');
+  if (layoutCheck) layoutCheck.className = 'dd-check ' + (teamLayout === TEAM_LAYOUT_HORIZONTAL ? 'on' : 'off');
 }
 const UI_TEXT = {
   fr: {
@@ -897,6 +918,7 @@ function resetAll() {
   if (genBadge) { genBadge.textContent = ''; genBadge.style.display = 'none'; }
   renderVanillaOptionsMenu();
   syncSpriteModeToggle();
+  syncTeamLayoutToggle();
   syncSidebarLoadersVisibility();
   hideGlobalLoading();
 }
@@ -973,6 +995,7 @@ function setLang(lang) {
   }
   renderVanillaOptionsMenu();
   syncSpriteModeToggle();
+  syncTeamLayoutToggle();
   resetTrainerDisplayCaches();
   if (Object.keys(groupedTrainers).length) buildSidebarTrainerIndex();
   renderList();
@@ -1100,14 +1123,11 @@ function showStatPreview(side, data, nature, level, ivs, evs) {
   let html = `<div style="font-size:9px;color:var(--muted);margin-bottom:4px;font-family:'Exo 2',sans-serif;font-weight:800;">${isLumiRom && lumiData ? '⭐ Stats Lumi' : '📊 Bases'}</div>`;
   html += Object.entries(LABELS).map(([k, lbl]) => {
     const base = bs[k] || 0;
-    const max = k==='hp' ? 714 : 600;
-    const pct = Math.min(100, Math.round(base/max*100));
-    const cls = pct >= 60 ? 'great' : pct >= 35 ? 'good' : '';
     const vanilla = VANILLA_STATS[data.nameEn?.toLowerCase()]?.[k] || null;
     const changed = lumiData && vanilla && base !== vanilla;
-    return `<div class="calc-stat-row">
+    return `<div class="calc-stat-row" style="${smogonStatStyle(base)}">
       <span class="calc-stat-name">${lbl}</span>
-      <div class="calc-stat-bar-bg"><div class="calc-stat-bar-fill stat-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="calc-stat-bar-bg"><div class="calc-stat-bar-fill stat-bar-fill" style="width:var(--stat-width)"></div></div>
       <span class="calc-stat-val${changed?' lumi-changed':''}">${base}</span>
     </div>`;
   }).join('');
@@ -12224,13 +12244,32 @@ function calcRealStats(baseStats, ivs, evs, nature, level) {
   return result;
 }
 
+// Matches the Smogon Dex stat bar scale and color ramp.
+function smogonStatWidth(stat) {
+  return Math.max(Math.min((Number(stat) || 0) * 2, 400), 18) / 400 * 100;
+}
+
+function smogonStatColor(stat) {
+  const value = Number(stat) || 0;
+  const ramp = Math.floor(Math.min(Math.max(value - 50, 0), 100) * 2.55);
+  const toHex = n => (`0${Math.max(0, Math.min(255, Math.round(n))).toString(16)}`).slice(-2);
+  const red = toHex(Math.min((255 - ramp) * 2, 255));
+  const green = toHex(Math.min(ramp * 2, 255));
+  const blue = toHex(Math.floor(Math.min(Math.max(value - 140, 0), 60) * (255 / 60)));
+  return `#${red}${green}${blue}`;
+}
+
+function smogonStatStyle(stat, widthStat = stat) {
+  return `--stat-color:${smogonStatColor(stat)};--stat-width:${smogonStatWidth(widthStat).toFixed(2)}%`;
+}
+
 function renderStatBars(stats, max) {
   const LABELS = {hp:'HP',atk:'ATK',def:'DEF',spAtk:'SpA',spDef:'SpD',spd:'SPD'};
   return Object.entries(LABELS).map(([k,lbl])=>{
     const v = stats[k]??0;
     const pct = Math.round(v/max*100);
-    const cls = pct>=85?'great':pct>=55?'good':'';
-    return `<div class="stat-row"><span class="stat-name">${lbl}</span><div class="stat-bar-bg"><div class="stat-bar-fill ${cls}" style="width:${pct}%"></div></div><span class="stat-num">${v}</span></div>`;
+    const scaledStat = Math.round((v / max) * 100);
+    return `<div class="stat-row" style="${smogonStatStyle(scaledStat, pct * 2)}"><span class="stat-name">${lbl}</span><div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%"></div></div><span class="stat-num">${v}</span></div>`;
   }).join('');
 }
 
@@ -12240,9 +12279,7 @@ function renderDualStatBars(withStats, withoutStats) {
     const applied = withStats[k]??0;
     const base = withoutStats[k]??0;
     const v = useAppliedStats ? applied : base;
-    const pct=Math.min(100,Math.round(v/(k==='hp'?714:600)*100));
-    const cls=v>=300?'great':v>=150?'good':'';
-    return `<div class="real-stat-row"><span class="stat-name">${lbl}</span><div class="stat-bar-bg"><div class="real-stat-bar-fill stat-bar-fill ${cls}" style="width:${pct}%"></div></div><span class="stat-num">${v}</span></div>`;
+    return `<div class="real-stat-row" style="${smogonStatStyle(v)}"><span class="stat-name">${lbl}</span><div class="stat-bar-bg"><div class="real-stat-bar-fill stat-bar-fill" style="width:var(--stat-width)"></div></div><span class="stat-num">${v}</span></div>`;
   }).join('');
 }
 
@@ -12860,7 +12897,8 @@ function renderDetail(name, versions, vIdx) {
     <div id="poke-search-noresult" style="display:${detailPokeSearchQuery && versions.length > 1 && !matchingVersionIndexes.length ? '' : 'none'};font-size:12px;color:var(--muted);padding:8px 0;">${t('pokeSearchNone')}</div>
   </div>`;
   
-  html += `<div class="section-title">${t('teamLabel')} (${party.length} Pokémon)</div><div class="poke-grid" id="poke-grid">`;
+  const layoutClass = teamLayout === TEAM_LAYOUT_HORIZONTAL ? ' layout-horizontal' : ' layout-vertical';
+  html += `<div class="section-title">${t('teamLabel')} (${party.length} Pokémon)</div><div class="poke-grid${layoutClass}" id="poke-grid">`;
 
   party.forEach((poke, i) => {
     const moves = (poke.moveset||[]).filter(m=>m);
@@ -12881,19 +12919,21 @@ function renderDetail(name, versions, vIdx) {
           ${poke.shiny?'<span class="shiny-star">✨</span>':''}
         </div>
         <div class="poke-info">
-          <div class="poke-header">
-            <div class="poke-names">
-              <div class="poke-name-fr fr-only" id="name-fr-${i}">${initName}</div>
-              <div class="poke-name-en-big en-only" id="name-en-big-${i}">${initName}</div>
-              <div class="poke-name-en fr-only" id="name-en-${i}"></div>
-              <div class="poke-name-fr-small en-only" id="name-fr-small-${i}" style="font-size:11px;color:var(--muted);font-style:italic;margin-top:1px;font-family:'Exo 2',sans-serif;"></div>
-              <div class="poke-types" id="types-top-${i}"></div>
+          <div class="poke-summary">
+            <div class="poke-header">
+              <div class="poke-names">
+                <div class="poke-name-fr fr-only" id="name-fr-${i}">${initName}</div>
+                <div class="poke-name-en-big en-only" id="name-en-big-${i}">${initName}</div>
+                <div class="poke-name-en fr-only" id="name-en-${i}"></div>
+                <div class="poke-name-fr-small en-only" id="name-fr-small-${i}" style="font-size:11px;color:var(--muted);font-style:italic;margin-top:1px;font-family:'Exo 2',sans-serif;"></div>
+                <div class="poke-types" id="types-top-${i}"></div>
+              </div>
+              <span class="poke-lv">Lv.${poke.level}</span>
             </div>
-            <span class="poke-lv">Lv.${poke.level}</span>
+            ${poke.nature?`<div class="poke-row"><span class="poke-label"><span class="fr-only">Nature</span><span class="en-only">Nature</span></span><span class="poke-val val-nature"><a class="wiki-link fr-only" href="https://www.pokepedia.fr/Nature" target="_blank">${natureFr}</a><a class="wiki-link en-only" href="https://bulbapedia.bulbagarden.net/wiki/Nature" target="_blank">${natureEn}</a></span></div>`:''}
+            <div class="poke-row"><span class="poke-label fr-only">Talent</span><span class="poke-label en-only">Ability</span><span class="poke-val val-ability" id="ability-${i}">${poke.ability||'—'}</span></div>
+            ${poke.heldItem?`<div class="poke-row"><span class="poke-label fr-only">Objet</span><span class="poke-label en-only">Item</span><span class="poke-val val-item" id="item-${i}"><span class="fr-only">${poke.heldItem}</span><span class="en-only">${poke.heldItem}</span></span></div>`:''}
           </div>
-          ${poke.nature?`<div class="poke-row"><span class="poke-label"><span class="fr-only">Nature</span><span class="en-only">Nature</span></span><span class="poke-val val-nature"><a class="wiki-link fr-only" href="https://www.pokepedia.fr/Nature" target="_blank">${natureFr}</a><a class="wiki-link en-only" href="https://bulbapedia.bulbagarden.net/wiki/Nature" target="_blank">${natureEn}</a></span></div>`:''}
-          <div class="poke-row"><span class="poke-label fr-only">Talent</span><span class="poke-label en-only">Ability</span><span class="poke-val val-ability" id="ability-${i}">${poke.ability||'—'}</span></div>
-          ${poke.heldItem?`<div class="poke-row"><span class="poke-label fr-only">Objet</span><span class="poke-label en-only">Item</span><span class="poke-val val-item" id="item-${i}"><span class="fr-only">${poke.heldItem}</span><span class="en-only">${poke.heldItem}</span></span></div>`:''}
           <div class="moves-section">
             <div class="poke-label fr-only">${t('attacks')}</div>
             <div class="poke-label en-only">${t('attacks')}</div>
@@ -13983,6 +14023,7 @@ window.addEventListener('load', () => {
     }
   }).catch(() => {});
   syncSpriteModeToggle();
+  syncTeamLayoutToggle();
   if (document.body.dataset.startView === 'vanilla') {
     showVanillaBrowser();
   }
