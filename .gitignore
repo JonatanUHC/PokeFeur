@@ -3,3 +3,6 @@ Thumbs.db
 .netlify
 .tmp-chrome-cdp/
 .tmp-chrome-cdp2/
+.tmp-mobile-check/
+.tmp-mobile-check2/
+mobile-check.png
