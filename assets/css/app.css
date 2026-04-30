@@ -366,19 +366,51 @@ mark{background:rgba(247,201,72,.3);color:var(--gold);border-radius:2px;padding:
 .field-check input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;}
 .field-check label{font-size:11px;color:var(--text);cursor:pointer;font-family:'Exo 2',sans-serif;}
 @media(max-width:700px){
+  body{overflow:hidden;}
+  header{padding:10px 12px;gap:10px;}
+  .header-right{gap:8px;}
+  .dropdown-btn,.calc-open-btn{padding:7px 9px;font-size:6px;}
+  .dropdown-panel{right:0;min-width:min(260px,92vw);}
   .app{grid-template-columns:1fr;height:auto;}
   .sidebar{height:45vh;border-right:none;border-bottom:1px solid var(--border);}
   .detail{padding:14px;}
-  .poke-grid{grid-template-columns:1fr;}
+  .trainer-hero{display:block;margin-bottom:16px;padding-bottom:14px;}
+  .trainer-portrait{width:88px;height:104px;margin-bottom:12px;}
+  .chips{gap:5px;}
+  .vtabs{margin-bottom:14px;}
+  .poke-search-box input{max-width:none;width:100%;}
+  .section-title{margin-bottom:10px;}
+  .poke-grid{grid-template-columns:1fr;gap:12px;}
   .poke-grid.layout-horizontal{display:grid;grid-template-columns:1fr;}
-  .poke-grid.layout-horizontal .poke-body{grid-template-columns:82px minmax(0,1fr);}
-  .poke-grid.layout-horizontal .poke-sprite-col{width:82px;padding:8px 5px;}
-  .poke-grid.layout-horizontal .poke-sprite{width:62px;height:62px;}
-  .poke-grid.layout-horizontal .poke-info{display:block;padding:7px;}
-  .poke-grid.layout-horizontal .moves-section{margin-top:5px;}
-  .poke-grid.layout-horizontal .section-ivs,.poke-grid.layout-horizontal .section-evs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
-  .poke-grid.layout-horizontal .real-stats-block{border-top:1px solid rgba(30,48,88,.6);padding-top:6px;margin-top:7px;}
+  .poke-grid.layout-horizontal .poke-card:hover{transform:none;}
+  .poke-grid.layout-horizontal .poke-body{grid-template-columns:1fr;}
+  .poke-grid.layout-horizontal .poke-sprite-col{width:100%;padding:12px 10px;border-right:0;border-bottom:1px solid var(--border);gap:8px;}
+  .poke-grid.layout-horizontal .poke-loading{min-height:138px;}
+  .poke-grid.layout-horizontal .poke-sprite{width:136px;height:136px;}
+  .poke-grid.layout-horizontal .poke-types-sprite{gap:6px;max-width:100%;}
+  .poke-grid.layout-horizontal .poke-info{display:block;padding:10px 12px;}
+  .poke-grid.layout-horizontal .poke-summary{display:block;}
+  .poke-grid.layout-horizontal .poke-header{align-items:center;margin-bottom:6px;}
+  .poke-grid.layout-horizontal .poke-name-fr,.poke-grid.layout-horizontal .poke-name-en-big{font-size:18px;}
+  .poke-grid.layout-horizontal .poke-name-en,.poke-grid.layout-horizontal .poke-name-fr-small{font-size:12px;}
+  .poke-grid.layout-horizontal .poke-lv{font-size:16px;padding:6px 12px;}
+  .poke-grid.layout-horizontal .poke-row{font-size:13px;padding:5px 0;}
+  .poke-grid.layout-horizontal .poke-label{font-size:10px;}
+  .poke-grid.layout-horizontal .poke-val{font-size:14px;}
+  .poke-grid.layout-horizontal [id^="matchups-"]{margin-top:8px;}
+  .poke-grid.layout-horizontal .type-badge{font-size:11px;min-width:68px;padding:5px 11px;}
+  .poke-grid.layout-horizontal .matchup-label{font-size:10px;}
+  .poke-grid.layout-horizontal .matchup-badge{font-size:11px;padding:5px 9px;}
+  .poke-grid.layout-horizontal .moves-section{margin-top:10px;}
+  .poke-grid.layout-horizontal .moves-grid{grid-template-columns:1fr;gap:7px;}
+  .poke-grid.layout-horizontal .move-pill{min-height:70px;padding:8px 10px;}
+  .poke-grid.layout-horizontal .move-pill .move-fr,.poke-grid.layout-horizontal .move-pill .move-en{font-size:14px;min-height:auto;}
+  .poke-grid.layout-horizontal .move-type-badge{font-size:10px;}
+  .poke-grid.layout-horizontal .section-ivs,.poke-grid.layout-horizontal .section-evs,.poke-grid.layout-horizontal .real-stats-block{display:grid;grid-template-columns:1fr;border-top:1px solid rgba(30,48,88,.6);padding-top:8px;margin-top:9px;}
+  .poke-grid.layout-horizontal .stat-label-row{font-size:10px;}
+  .poke-grid.layout-horizontal .stat-row,.poke-grid.layout-horizontal .real-stat-row{grid-template-columns:36px minmax(0,1fr) 40px;gap:8px;}
   .calc-panel{width:100%;}
   .guide-panel{padding:18px;}
   .guide-columns{grid-template-columns:1fr;}
+  .guide-footer{display:block;}
 }

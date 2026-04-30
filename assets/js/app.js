@@ -88,7 +88,7 @@ const TEAM_LAYOUT_VERTICAL = 'vertical';
 const TEAM_LAYOUT_HORIZONTAL = 'horizontal';
 let teamLayout = safeLocalStorageGet(STORAGE_KEYS.teamLayout) || TEAM_LAYOUT_HORIZONTAL;
 if (![TEAM_LAYOUT_VERTICAL, TEAM_LAYOUT_HORIZONTAL].includes(teamLayout)) teamLayout = TEAM_LAYOUT_VERTICAL;
-const APP_ASSET_VERSION = '100';
+const APP_ASSET_VERSION = '101';
 // Local offline dex data generated from CSV + Showdown resources.
 // Priority order in the viewer stays: ROM/log runtime -> local dex -> web APIs.
 const LOCAL_DEX = window.LOCAL_DEX_DATA || { pokemon: {}, moves: {}, items: {}, abilities: {}, spriteBasePath: '' };
