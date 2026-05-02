@@ -88,7 +88,7 @@ const TEAM_LAYOUT_VERTICAL = 'vertical';
 const TEAM_LAYOUT_HORIZONTAL = 'horizontal';
 let teamLayout = safeLocalStorageGet(STORAGE_KEYS.teamLayout) || TEAM_LAYOUT_HORIZONTAL;
 if (![TEAM_LAYOUT_VERTICAL, TEAM_LAYOUT_HORIZONTAL].includes(teamLayout)) teamLayout = TEAM_LAYOUT_VERTICAL;
-const APP_ASSET_VERSION = '102';
+const APP_ASSET_VERSION = '105';
 // Local offline dex data generated from CSV + Showdown resources.
 // Priority order in the viewer stays: ROM/log runtime -> local dex -> web APIs.
 const LOCAL_DEX = window.LOCAL_DEX_DATA || { pokemon: {}, moves: {}, items: {}, abilities: {}, spriteBasePath: '' };
@@ -12506,8 +12506,9 @@ const VERSION_INFO = {
 
 const VERSION_PATTERNS = [
   { key:'Luminescent Platinum', patterns:[/\bluminescent\s+platinum\b/i, /\bluminescent\b/i] },
-  { key:'Pokemon Brilliant Diamond', patterns:[/\bbrilliant\s+diamond\b/i, /\bpokemon\s+brilliant\s+diamond\b/i, /\bdiamant\s+etincelant\b/i, /\bbdsp\b/i] },
+  { key:'Pokemon Brilliant Diamond', patterns:[/\bbrilliant\s+diamond\b/i, /\bpokemon\s+brilliant\s+diamond\b/i, /\bdiamant\s+(?:e|é)tincelant\b/i] },
   { key:'Pokemon Shining Pearl', patterns:[/\bshining\s+pearl\b/i, /\bpokemon\s+shining\s+pearl\b/i, /\bperle\s+scintillante\b/i] },
+  { key:'Pokemon BDSP', patterns:[/\bbdsp\b/i] },
   { key:'Pokemon Platinum', patterns:[/\bpokemon\s+platinum\b/i, /\bpokemon\s+version\s+platine\b/i, /\bversion\s+platine\b/i, /\bpokeplatine\b/i, /\bplatinum\s+version\b/i, /\bplatine\b/i] },
   { key:'Pokemon Diamond', patterns:[/\bpokemon\s+diamond\b/i, /\bpokemon\s+version\s+diamant\b/i, /\bversion\s+diamant\b/i, /\bdiamant\b/i] },
   { key:'Pokemon Pearl', patterns:[/\bpokemon\s+pearl\b/i, /\bpokemon\s+version\s+perle\b/i, /\bversion\s+perle\b/i, /\bperle\b/i] },
@@ -12531,6 +12532,79 @@ const VERSION_PATTERNS = [
   { key:'Pokemon Violet', patterns:[/\bpokemon\s+violet\b/i, /\bviolet\b/i] },
 ];
 
+const VERSION_BY_DS_CODE_PREFIX = {
+  ADA: 'Pokemon Diamond',
+  APA: 'Pokemon Pearl',
+  CPU: 'Pokemon Platinum',
+  IPK: 'Pokemon HeartGold',
+  IPG: 'Pokemon SoulSilver',
+  IRA: 'Pokemon White',
+  IRB: 'Pokemon Black',
+  IRD: 'Pokemon White 2',
+  IRE: 'Pokemon Black 2',
+};
+
+const VERSION_BY_PRODUCT_CODE_PREFIX = {
+  'CTR-P-EKJ': 'Pokemon X',
+  'CTR-P-EK2': 'Pokemon Y',
+  'CTR-P-ECR': 'Pokemon Omega Ruby',
+  'CTR-P-ECL': 'Pokemon Alpha Sapphire',
+  'CTR-P-BND': 'Pokemon Sun',
+  'CTR-P-BNE': 'Pokemon Moon',
+  'CTR-P-A2A': 'Pokemon Ultra Sun',
+  'CTR-P-A2B': 'Pokemon Ultra Moon',
+};
+
+const VERSION_BY_TITLE_ID = {
+  '0004000000055D00': 'Pokemon X',
+  '0004000000055E00': 'Pokemon Y',
+  '000400000011C400': 'Pokemon Omega Ruby',
+  '000400000011C500': 'Pokemon Alpha Sapphire',
+  '0004000000164800': 'Pokemon Sun',
+  '0004000000175E00': 'Pokemon Moon',
+  '00040000001B5000': 'Pokemon Ultra Sun',
+  '00040000001B5100': 'Pokemon Ultra Moon',
+  '0100ABF008968000': 'Pokemon Sword',
+  '01008DB008C2C000': 'Pokemon Shield',
+  '0100000011D90000': 'Pokemon Brilliant Diamond',
+  '010018E011D92000': 'Pokemon Shining Pearl',
+  '0100A3D008C5C000': 'Pokemon Scarlet',
+  '01008F6008C5E000': 'Pokemon Violet',
+};
+
+const VERSION_BY_META_GAME = {
+  brilliantdiamond: 'Pokemon Brilliant Diamond',
+  brilliant_diamond: 'Pokemon Brilliant Diamond',
+  shiningpearl: 'Pokemon Shining Pearl',
+  shining_pearl: 'Pokemon Shining Pearl',
+  luminescentdiamond: 'Pokemon Luminescent Diamond',
+  luminescent_diamond: 'Pokemon Luminescent Diamond',
+  luminescentpearl: 'Pokemon Luminescent Pearl',
+  luminescent_pearl: 'Pokemon Luminescent Pearl',
+  luminescent: 'Luminescent Platinum',
+  sword: 'Pokemon Sword',
+  shield: 'Pokemon Shield',
+  scarlet: 'Pokemon Scarlet',
+  violet: 'Pokemon Violet',
+  diamond: 'Pokemon Diamond',
+  pearl: 'Pokemon Pearl',
+  platinum: 'Pokemon Platinum',
+  heartgold: 'Pokemon HeartGold',
+  soulsilver: 'Pokemon SoulSilver',
+  black: 'Pokemon Black',
+  white: 'Pokemon White',
+  black2: 'Pokemon Black 2',
+  white2: 'Pokemon White 2',
+  x: 'Pokemon X',
+  y: 'Pokemon Y',
+  omegaruby: 'Pokemon Omega Ruby',
+  alphasapphire: 'Pokemon Alpha Sapphire',
+  sun: 'Pokemon Sun',
+  moon: 'Pokemon Moon',
+  ultrasun: 'Pokemon Ultra Sun',
+  ultramoon: 'Pokemon Ultra Moon',
+};
+
 function makeVersionResult(key, source = 'fallback', confidence = 0.5, detail = '') {
   const info = VERSION_INFO[key] || { name: key, gen: 4, spriteGen: 'platinum' };
   return { ...info, key, source, confidence, detail };
@@ -12544,6 +12618,44 @@ function tryMatchVersionInString(raw, source, confidence = 0.9) {
     }
   }
   return null;
+}
+
+function normalizeMetaToken(value) {
+  return stripDiacritics(String(value || '').toLowerCase()).replace(/[^a-z0-9]+/g, '');
+}
+
+function detectVersionFromMetadata(meta = {}, filename = '') {
+  const sourceValues = [
+    meta?.game,
+    meta?.version,
+    meta?.sourceGameVersion,
+    meta?.title,
+    meta?.name,
+    meta?.sourceFile,
+    filename,
+  ];
+  for (const value of sourceValues) {
+    const key = VERSION_BY_META_GAME[normalizeMetaToken(value)];
+    if (key) return makeVersionResult(key, 'rom-meta', 1, String(value || ''));
+  }
+
+  const titleIdValues = [meta?.titleId, meta?.titleID, meta?.programId, meta?.programID, filename];
+  for (const value of titleIdValues) {
+    const compact = String(value || '').toUpperCase().replace(/[^A-F0-9]/g, '');
+    const key = VERSION_BY_TITLE_ID[compact] || Object.entries(VERSION_BY_TITLE_ID).find(([tid]) => compact.includes(tid))?.[1];
+    if (key) return makeVersionResult(key, 'title-id', 1, String(value || ''));
+  }
+
+  const productCode = String(meta?.productCode || meta?.product_code || '').toUpperCase().trim();
+  const productKey = Object.entries(VERSION_BY_PRODUCT_CODE_PREFIX).find(([prefix]) => productCode.startsWith(prefix))?.[1];
+  if (productKey) return makeVersionResult(productKey, 'product-code', 1, productCode);
+
+  const idCode = String(meta?.idCode || meta?.gameCode || meta?.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const dsKey = VERSION_BY_DS_CODE_PREFIX[idCode.slice(0, 3)];
+  if (dsKey) return makeVersionResult(dsKey, 'ds-code', 1, idCode);
+
+  return tryMatchVersionInString(sourceValues.filter(Boolean).join(' '), 'rom-meta-name', 0.95)
+    || tryMatchVersionInString(filename, 'filename', 0.85);
 }
 
 function detectVersionByGenerationHint(raw, source = 'heuristic') {
@@ -12564,6 +12676,8 @@ function detectVersionByGenerationHint(raw, source = 'heuristic') {
 function detectVersionFromText(text, filename) {
   const shortText = text.substring(0, 60000);
   const headerText = text.substring(0, 12000);
+  const metaMatch = detectVersionFromMetadata({}, filename);
+  if (metaMatch) return metaMatch;
   const exactSources = [
     { value: (text.match(/Randomization of (.+?) completed\./i) || [])[1], source: 'log-summary', confidence: 1 },
     { value: (text.match(/File name:\s*(.+)/i) || [])[1], source: 'rom-diagnostics', confidence: 1 },
@@ -13598,6 +13712,36 @@ async function loadRomArrayBuffer(buffer, filename = '') {
   }
 }
 
+async function loadSwitchRomFromFilename(filename = '') {
+  const versionInfo = detectVersionFromMetadata({}, filename);
+  const gameKeyByVersion = {
+    'Pokemon Sword': 'sword',
+    'Pokemon Shield': 'shield',
+    'Pokemon Brilliant Diamond': 'brilliantdiamond',
+    'Pokemon Shining Pearl': 'shiningpearl',
+    'Pokemon Scarlet': 'scarlet',
+    'Pokemon Violet': 'violet',
+  };
+  const game = gameKeyByVersion[versionInfo?.key || ''];
+  if (!game) {
+    showToast(currentLang === 'fr'
+      ? '❌ ROM Switch non reconnue par son nom ou Title ID'
+      : '❌ Switch ROM not recognized from its name or Title ID');
+    hideGlobalLoading();
+    return;
+  }
+  const lang = currentLang === 'en' ? 'en' : 'fr';
+  const entry = getVanillaManifest().find(row => row.game === game && row.language === lang)
+    || getVanillaManifest().find(row => row.game === game);
+  if (!entry) {
+    showToast('❌ Dataset vanilla introuvable');
+    hideGlobalLoading();
+    return;
+  }
+  await loadBuiltInVanilla(entry.slug + '::' + ((entry.regions || ['global'])[0]), true);
+  hideGlobalLoading();
+}
+
 async function loadLogFile(text, filename) {
   detectedVersionInfo = detectVersionFromText(text, filename);
   detectedVersionMeta = detectedVersionInfo;
@@ -13654,14 +13798,8 @@ async function applyJSONData(data, filename = '') {
   }
   isLumiRom = detectLumi(data);
   const rawGame = String(rawDataset?.meta?.game || '').toLowerCase();
-  if (rawGame === 'brilliantdiamond') detectedVersionInfo = makeVersionResult('Pokemon Brilliant Diamond', 'json-meta', 1, rawGame);
-  else if (rawGame === 'shiningpearl') detectedVersionInfo = makeVersionResult('Pokemon Shining Pearl', 'json-meta', 1, rawGame);
-  else if (rawGame === 'luminescentdiamond') detectedVersionInfo = makeVersionResult('Pokemon Luminescent Diamond', 'json-meta', 1, rawGame);
-  else if (rawGame === 'luminescentpearl') detectedVersionInfo = makeVersionResult('Pokemon Luminescent Pearl', 'json-meta', 1, rawGame);
-  else if (rawGame === 'scarlet') detectedVersionInfo = makeVersionResult('Pokemon Scarlet', 'json-meta', 1, rawGame);
-  else if (rawGame === 'violet') detectedVersionInfo = makeVersionResult('Pokemon Violet', 'json-meta', 1, rawGame);
-  else if (rawGame === 'luminescent') detectedVersionInfo = makeVersionResult('Luminescent Platinum', 'json-meta', 1, rawGame);
-  else detectedVersionInfo = detectVersionFromData(data, filename);
+  const metaVersionInfo = rawDataset?.meta ? detectVersionFromMetadata(rawDataset.meta, filename) : null;
+  detectedVersionInfo = metaVersionInfo || detectVersionFromData(data, filename);
   detectedVersionMeta = detectedVersionInfo;
   if (isLumiRom && !/^pokemon luminescent /i.test(String(detectedVersionInfo?.name || ''))) {
     detectedVersionInfo = makeVersionResult('Luminescent Platinum', 'json-lumi', 1, 'luminescent-signature');
@@ -13909,6 +14047,8 @@ function handlePrimaryFileInputChange(e) {
   if (lower.endsWith('.nds') || lower.endsWith('.3ds') || lower.endsWith('.cxi')) {
     r.onload = ev => loadRomArrayBuffer(ev.target.result, f.name);
     r.readAsArrayBuffer(f);
+  } else if (lower.endsWith('.nsp') || lower.endsWith('.xci') || lower.endsWith('.nca')) {
+    loadSwitchRomFromFilename(f.name);
   } else {
     r.onload = ev => loadFile(ev.target.result, f.name);
     r.readAsText(f);
@@ -13935,6 +14075,8 @@ document.body.addEventListener('drop', e => {
   if (lower.endsWith('.nds') || lower.endsWith('.3ds') || lower.endsWith('.cxi')) {
     r.onload = ev => loadRomArrayBuffer(ev.target.result, f.name);
     r.readAsArrayBuffer(f);
+  } else if (lower.endsWith('.nsp') || lower.endsWith('.xci') || lower.endsWith('.nca')) {
+    loadSwitchRomFromFilename(f.name);
   } else {
     r.onload = ev => loadFile(ev.target.result, f.name);
     r.readAsText(f);

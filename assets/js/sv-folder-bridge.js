@@ -485,8 +485,8 @@
 
   function guessSvGameFromName(name) {
     const lower = stripDiacritics(String(name || '').toLowerCase());
-    if (/\becarlate\b|\bscarlet\b/.test(lower)) return 'scarlet';
-    if (/\bviolet\b/.test(lower)) return 'violet';
+    if (lower.includes(TITLE_IDS.scarlet.toLowerCase()) || /\becarlate\b|\bscarlet\b/.test(lower)) return 'scarlet';
+    if (lower.includes(TITLE_IDS.violet.toLowerCase()) || /\bviolet\b/.test(lower)) return 'violet';
     return '';
   }
 
@@ -557,7 +557,7 @@
       if (found?.entry) selected.push({ file: found.entry.file, relativePath: found.relativePath });
       else missing.push(group[0]);
     }
-    return { selected, missing };
+    return { selected, missing, pathHint: entries.slice(0, 120).map(entry => entry.relativePath.toLowerCase()).join(' ') };
   }
 
   function findDumpFolderFiles(fileList) {
@@ -567,7 +567,7 @@
     }));
     const lookup = new Map(entries.map(entry => [entry.relativePath.toLowerCase(), entry]));
     const missing = DUMP_SIGNATURE_SUFFIXES.filter(suffix => !hasSuffixMatch(lookup, suffix));
-    return { missing };
+    return { missing, pathHint: entries.slice(0, 120).map(entry => entry.relativePath.toLowerCase()).join(' ') };
   }
 
   function findLooseBinaryFolderFiles(fileList) {
@@ -581,6 +581,7 @@
     return {
       trainer: trainerMatch ? { file: trainerMatch.entry.file, relativePath: trainerMatch.relativePath } : null,
       personal: personalMatch ? { file: personalMatch.entry.file, relativePath: personalMatch.relativePath } : null,
+      pathHint: entries.slice(0, 120).map(entry => entry.relativePath.toLowerCase()).join(' '),
     };
   }
 
@@ -596,6 +597,7 @@
       const rel = normalizePath(getArchiveRawEntryPath(entry)).toLowerCase();
       if (rel) lookup.set(rel, entry);
     }
+    const pathHint = Array.from(lookup.keys()).slice(0, 120).join(' ');
     const selected = [];
     const missing = [];
     for (const group of CUSTOM_REQUIRED_GROUPS) {
@@ -603,7 +605,7 @@
       if (!found?.entry) missing.push(group[0]);
       else selected.push({ entry: found.entry, relativePath: found.relativePath });
     }
-    return { archive, selected, missing, topFolderName };
+    return { archive, selected, missing, topFolderName, pathHint };
   }
 
   async function extractArchiveLooseBinaryFiles(file) {
@@ -618,11 +620,13 @@
       const rel = normalizePath(getArchiveRawEntryPath(entry)).toLowerCase();
       if (rel) lookup.set(rel, entry);
     }
+    const pathHint = Array.from(lookup.keys()).slice(0, 120).join(' ');
     const trainerMatch = findFirstSuffixMatch(lookup, LOOSE_BINARY_GROUPS.trainers);
     const personalMatch = findFirstSuffixMatch(lookup, LOOSE_BINARY_GROUPS.personal);
     return {
       archive,
       topFolderName,
+      pathHint,
       trainer: trainerMatch ? { entry: trainerMatch.entry, relativePath: trainerMatch.relativePath } : null,
       personal: personalMatch ? { entry: personalMatch.entry, relativePath: personalMatch.relativePath } : null,
     };
@@ -866,6 +870,7 @@
       payload?.game,
       payload?.sourceName,
       payload?.topFolderName,
+      payload?.pathHint,
     );
     const game = explicitGame || 'scarlet';
     const title = explicitGame
@@ -946,7 +951,8 @@
         language: getPreferredLanguage(),
         topFolderName,
         sourceName: topFolderName,
-        game: resolveSvGameHint(topFolderName),
+        game: resolveSvGameHint(topFolderName, customSelection.pathHint),
+        pathHint: customSelection.pathHint,
         trdataText: await getMappedValueBySuffix(map, [
           'randomizer/trainers/trdata_array_clean.json',
           'randomizer/trainers/trdata_array.json',
@@ -976,7 +982,8 @@
         language: getPreferredLanguage(),
         topFolderName,
         sourceName: topFolderName,
-        game: resolveSvGameHint(topFolderName),
+        game: resolveSvGameHint(topFolderName, looseBinarySelection.pathHint),
+        pathHint: looseBinarySelection.pathHint,
         trdataText: JSON.stringify(trainerJson),
         personalText: JSON.stringify(personalJson),
         pokemonToIdText: '',
@@ -986,7 +993,7 @@
     }
 
     if (!dumpSelection.missing.length) {
-      const game = resolveSvGameHint(topFolderName);
+      const game = resolveSvGameHint(topFolderName, dumpSelection.pathHint);
       if (!game) {
         await loadMatchedDataset('scarlet', topFolderName || 'Scarlet-Violet dump');
         showToast(lang === 'fr'
@@ -1013,7 +1020,7 @@
     setGlobalLoadingProgress(10, lang === 'fr' ? 'Lecture de l’archive…' : 'Reading archive…');
     await waitForLoadingFrame();
 
-    const { archive, selected, missing, topFolderName } = await extractArchiveCustomFiles(file);
+    const { archive, selected, missing, topFolderName, pathHint } = await extractArchiveCustomFiles(file);
     try {
       if (!missing.length) {
         const textMap = new Map();
@@ -1034,7 +1041,8 @@
           language: getPreferredLanguage(),
           topFolderName,
           sourceName: file?.name || topFolderName,
-          game: resolveSvGameHint(file?.name, topFolderName),
+          game: resolveSvGameHint(file?.name, topFolderName, pathHint),
+          pathHint,
           trdataText: getMappedValueBySuffix(textMap, [
             'randomizer/trainers/trdata_array_clean.json',
             'randomizer/trainers/trdata_array.json',
@@ -1075,7 +1083,8 @@
           language: getPreferredLanguage(),
           topFolderName: looseBinaryResult.topFolderName,
           sourceName: file?.name || looseBinaryResult.topFolderName,
-          game: resolveSvGameHint(file?.name, looseBinaryResult.topFolderName),
+          game: resolveSvGameHint(file?.name, looseBinaryResult.topFolderName, looseBinaryResult.pathHint),
+          pathHint: looseBinaryResult.pathHint,
           trdataText: JSON.stringify(trainerJson),
           personalText: JSON.stringify(personalJson),
           pokemonToIdText: '',
@@ -1089,7 +1098,7 @@
       }
     }
 
-    const game = resolveSvGameHint(file?.name, topFolderName);
+    const game = resolveSvGameHint(file?.name, topFolderName, pathHint);
     if (!game) {
       await loadMatchedDataset('scarlet', file?.name || topFolderName || 'Scarlet-Violet archive');
       showToast(lang === 'fr'

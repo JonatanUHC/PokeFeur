@@ -19,6 +19,7 @@
     personal: ['romfs/bin/pml/personal/personal_total.bin', 'bin/pml/personal/personal_total.bin'],
     learnset: ['romfs/bin/pml/waza_oboe/wazaoboe_total.bin', 'bin/pml/waza_oboe/wazaoboe_total.bin'],
   };
+  const REPORT_SUFFIXES = ['romfs/randomizer-report.json', 'randomizer-report.json', 'romfs/trainer-changes.json', 'trainer-changes.json'];
   const TRAINER_DATA_PATTERNS = [
     /(?:^|\/)romfs\/bin\/trainer\/trainer_data\/trainer_data_(\d+)\.bin$/i,
     /(?:^|\/)bin\/trainer\/trainer_data\/trainer_data_(\d+)\.bin$/i,
@@ -150,6 +151,20 @@
     return '';
   }
 
+  function guessSwshGameFromReport(report) {
+    if (!report || typeof report !== 'object') return '';
+    const explicit = guessSwshGameFromName([
+      report.sourceGameVersion,
+      report.game,
+      report.title,
+    ].filter(Boolean).join(' '));
+    if (explicit) return explicit;
+    return guessSwshGameFromName([
+      report.sourceRomfs,
+      report.outputRomfs,
+    ].filter(Boolean).join(' '));
+  }
+
   function inferCurrentSwshGame() {
     try {
       if (typeof vanillaMenuGame !== 'undefined' && (vanillaMenuGame === 'sword' || vanillaMenuGame === 'shield')) return vanillaMenuGame;
@@ -240,8 +255,10 @@
     const entries = new Map(Array.from(fileList || []).map(file => [normalizePath(file.webkitRelativePath || file.name).toLowerCase(), file]));
     return {
       topFolderName: getTopFolderName(fileList),
+      pathHint: Array.from(entries.keys()).slice(0, 120).join(' '),
       personal: findBySuffix(entries, REQUIRED_SUFFIXES.personal),
       learnset: findBySuffix(entries, REQUIRED_SUFFIXES.learnset),
+      report: findBySuffix(entries, REPORT_SUFFIXES),
       trainerData: collectMatching(entries, TRAINER_DATA_PATTERNS),
       trainerPoke: collectMatching(entries, TRAINER_POKE_PATTERNS),
     };
@@ -366,11 +383,32 @@
     return {
       archive,
       topFolderName,
+      pathHint: Array.from(entries.keys()).slice(0, 120).join(' '),
       personal: findBySuffix(entries, REQUIRED_SUFFIXES.personal),
       learnset: findBySuffix(entries, REQUIRED_SUFFIXES.learnset),
+      report: findBySuffix(entries, REPORT_SUFFIXES),
       trainerData: collectMatching(entries, TRAINER_DATA_PATTERNS),
       trainerPoke: collectMatching(entries, TRAINER_POKE_PATTERNS),
     };
+  }
+
+  async function readFolderReportGame(reportEntry) {
+    if (!reportEntry?.entry?.text) return '';
+    try {
+      return guessSwshGameFromReport(JSON.parse(await reportEntry.entry.text()));
+    } catch (error) {
+      return '';
+    }
+  }
+
+  async function readArchiveReportGame(reportEntry) {
+    if (!reportEntry?.entry?.file?.extract) return '';
+    try {
+      const blob = await reportEntry.entry.file.extract();
+      return guessSwshGameFromReport(JSON.parse(await blob.text()));
+    } catch (error) {
+      return '';
+    }
   }
 
   function parsePersonalTable(buffer) {
@@ -721,11 +759,12 @@
     await waitForLoadingFrame();
     setGlobalLoadingProgress(14, lang === 'fr' ? 'Préparation des binaires SWSH…' : 'Preparing SWSH binaries…');
     await waitForLoadingFrame();
+    const reportGame = await readFolderReportGame(selection.report);
     const dataset = await buildSwshDataset({
       language: getPreferredLanguage(),
       topFolderName: selection.topFolderName,
       sourceName: selection.topFolderName,
-      game: resolveSwshGameHint(selection.topFolderName),
+      game: resolveSwshGameHint(reportGame, selection.topFolderName, selection.pathHint),
       loadPersonal: selection.personal ? async () => parsePersonalTable(await selection.personal.entry.arrayBuffer()) : null,
       loadLearnset: selection.learnset ? async () => parseLearnsetTable(await selection.learnset.entry.arrayBuffer()) : null,
       trainerData: new Map(Array.from(selection.trainerData.entries()).map(([id, item]) => [id, () => item.entry.arrayBuffer()])),
@@ -745,11 +784,12 @@
       if (!extracted.trainerData.size || !extracted.trainerPoke.size) {
         throw new Error(lang === 'fr' ? 'Archive Sword/Shield non reconnue. Il faut au minimum un `romfs` avec `trainer_data` et `trainer_poke`.' : 'Unrecognized Sword/Shield archive. It must include at least a `romfs` with `trainer_data` and `trainer_poke`.');
       }
+      const reportGame = await readArchiveReportGame(extracted.report);
       const dataset = await buildSwshDataset({
         language: getPreferredLanguage(),
         topFolderName: extracted.topFolderName,
         sourceName: file?.name || extracted.topFolderName,
-        game: resolveSwshGameHint(file?.name, extracted.topFolderName),
+        game: resolveSwshGameHint(reportGame, file?.name, extracted.topFolderName, extracted.pathHint),
         loadPersonal: extracted.personal ? async () => parsePersonalTable(await (await extracted.personal.entry.file.extract()).arrayBuffer()) : null,
         loadLearnset: extracted.learnset ? async () => parseLearnsetTable(await (await extracted.learnset.entry.file.extract()).arrayBuffer()) : null,
         trainerData: new Map(Array.from(extracted.trainerData.entries()).map(([id, item]) => [id, async () => (await (await item.entry.file.extract()).arrayBuffer())])),

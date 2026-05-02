@@ -36,6 +36,10 @@
     '37724f268931c997a6e1826111d462cd5618a37e648164f1d40896ef60fe6ef5|5a71cfafd53af31a6cd45ab66e13c7080914b548d511e6f0f68925f74e5dc919|c97eb0f3291fa61c4633f552b38843643101fc60e947961fd9ec181f5c92205e': 'bdsp',
     '2f15b5f258051294b9fe51ef4710cc4385c5463131ece746ae95725c260166bf|bfe5505d3e62da1e8d9d5eb9a7eda6a0b7027f97e2ba27e1f08f00a73d1c8584|d5a799bbbac73ee2cd1b2968aa71f0b3a442d1b7902b61d396c86cc1a654156c': 'luminescent',
   };
+  const TITLE_IDS = {
+    diamond: '0100000011D90000',
+    pearl: '010018E011D92000',
+  };
 
   let archiveModulePromise = null;
   let archiveGlobalPromise = null;
@@ -150,6 +154,8 @@
 
   function guessVariant(folderName) {
     const lower = stripDiacritics(String(folderName || '').toLowerCase());
+    if (lower.includes(TITLE_IDS.pearl.toLowerCase())) return 'pearl';
+    if (lower.includes(TITLE_IDS.diamond.toLowerCase())) return 'diamond';
     if (/\bsp\b|perle|pearl|shining|scintillante/.test(lower)) return 'pearl';
     if (/\bbd\b|diamant|diamond|brilliant|etincelant/.test(lower)) return 'diamond';
     return 'diamond';
