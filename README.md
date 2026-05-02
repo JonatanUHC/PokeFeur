@@ -1,7 +1,7 @@
 # PokeFeur Trainer Viewer
 
 <div align="center">
-[![Discord](https://img.shields.io/badge/Discord-Join_the_server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bSUKYEJE)
+[![Discord](https://img.shields.io/badge/Discord-Join_the_server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bSUKYEJE/)
 [![Website](https://img.shields.io/badge/Website-Open_PokeFeur-4FC3F7?style=for-the-badge)](https://jonatanuhc.github.io/PokeFeur/)
 [![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Static_site-222222?style=for-the-badge&logo=github)](https://pages.github.com/)
 [![No Backend](https://img.shields.io/badge/No_backend-Local_files_only-A78BFA?style=for-the-badge)](https://github.com/)
