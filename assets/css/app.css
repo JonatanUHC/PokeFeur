@@ -37,6 +37,10 @@ header{
 .logo{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.4vw,13px);color:var(--accent);text-shadow:0 0 16px var(--accent);line-height:1.7;letter-spacing:1px;cursor:pointer;}
 .logo span{color:var(--gold);text-shadow:0 0 16px var(--gold);}
 .header-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.site-link{min-height:30px;padding:7px 10px;border:1px solid rgba(79,195,247,.28);border-radius:8px;background:rgba(79,195,247,.08);color:var(--accent);font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:.7px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:all .2s;}
+.site-link:hover{border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.16);box-shadow:0 0 14px rgba(79,195,247,.1);}
+.site-link.discord{border-color:rgba(88,101,242,.42);background:rgba(88,101,242,.12);color:#cfd4ff;}
+.site-link.github{border-color:rgba(226,234,248,.24);background:rgba(226,234,248,.07);color:var(--text);}
 .dropdown{position:relative;}
 .dropdown-btn{padding:7px 14px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.35);border-radius:8px;color:var(--accent);font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px;cursor:pointer;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:6px;}
 .dropdown-btn:hover{background:rgba(79,195,247,.2);}
@@ -368,11 +372,12 @@ mark{background:rgba(247,201,72,.3);color:var(--gold);border-radius:2px;padding:
 @media(max-width:700px){
   html,body{height:auto;min-height:100%;}
   body{display:block;overflow-y:auto;overflow-x:hidden;}
-  header{position:sticky;top:0;padding:10px 104px 10px 12px;gap:10px;align-items:center;min-height:55px;max-width:100vw;overflow:visible;}
-  .logo{font-size:9px;line-height:1.4;}
-  .header-right{position:absolute;right:10px;top:10px;gap:8px;margin-left:0;}
+  header{position:sticky;top:0;padding:10px 10px 10px 12px;gap:8px;align-items:center;min-height:55px;max-width:100vw;overflow:visible;}
+  .logo{font-size:9px;line-height:1.4;min-width:0;flex:1;}
+  .header-right{position:static;gap:6px;margin-left:auto;}
+  .site-link{width:34px;min-width:34px;min-height:34px;padding:8px 0;font-size:13px;overflow:hidden;}
   .dropdown-btn,.calc-open-btn{width:38px;min-width:38px;min-height:34px;padding:8px 0;font-size:6px;justify-content:center;overflow:hidden;}
-  .dropdown-btn .fr-only,.dropdown-btn .en-only,.calc-open-btn .fr-only,.calc-open-btn .en-only{display:none!important;}
+  .dropdown-btn .fr-only,.dropdown-btn .en-only,.calc-open-btn .fr-only,.calc-open-btn .en-only,.site-link .fr-only,.site-link .en-only{display:none!important;}
   .dropdown-btn .dd-arrow{display:none;}
   .dropdown-panel{right:0;min-width:min(280px,92vw);max-height:calc(100vh - 64px);overflow-y:auto;}
   .app{display:block;overflow:visible;min-height:calc(100vh - 55px);}
@@ -479,6 +484,8 @@ mark{background:rgba(247,201,72,.3);color:var(--gold);border-radius:2px;padding:
 @media(max-width:420px){
   header{padding:9px 10px;}
   .logo{font-size:8px;letter-spacing:.5px;}
+  .header-right{gap:6px;}
+  .site-link{width:30px;min-width:30px;min-height:32px;}
   .dropdown-btn,.calc-open-btn{padding:8px 8px;font-size:5px;}
   .trainer-list{max-height:38vh;}
   .poke-grid.layout-horizontal .poke-sprite,.poke-sprite{width:124px;height:124px;}

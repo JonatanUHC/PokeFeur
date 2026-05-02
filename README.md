@@ -3,7 +3,9 @@
 <div align="center">
 
 [![Website](https://img.shields.io/badge/Website-Open_PokeFeur-4FC3F7?style=for-the-badge)](https://jonatanuhc.github.io/PokeFeur/)
+[![Discord](https://img.shields.io/badge/Discord-PokeFeur_server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/qp4U6Hb6sM)
 [![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Static_site-222222?style=for-the-badge&logo=github)](https://pages.github.com/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/JonatanUHC/PokeFeur)
 [![No Backend](https://img.shields.io/badge/No_backend-Local_files_only-A78BFA?style=for-the-badge)](https://github.com/)
 
 [English](#english) | [Français](#français)
@@ -69,6 +71,13 @@ Main entry:
 
 ```text
 https://jonatanuhc.github.io/PokeFeur/
+```
+
+Community and repository:
+
+```text
+https://discord.gg/qp4U6Hb6sM
+https://github.com/JonatanUHC/PokeFeur
 ```
 
 Direct pages:
@@ -439,6 +448,13 @@ Page d'accueil:
 
 ```text
 https://jonatanuhc.github.io/PokeFeur/
+```
+
+Communauté et dépôt:
+
+```text
+https://discord.gg/qp4U6Hb6sM
+https://github.com/JonatanUHC/PokeFeur
 ```
 
 Pages directes:

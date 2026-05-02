@@ -13,6 +13,10 @@
     h1{margin:0 0 12px;font-family:'Press Start 2P',monospace;font-size:clamp(14px,2vw,22px);line-height:1.8;color:var(--accent)}
     p{margin:0 0 24px;color:var(--muted);font-size:15px;line-height:1.7}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .socials{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    .socials a{min-height:46px;flex:1 1 180px;padding:12px 14px;font-size:13px}
+    .socials a.discord{border-color:rgba(88,101,242,.45);color:#cfd4ff;background:rgba(88,101,242,.12)}
+    .socials a.github{border-color:rgba(226,234,248,.28);color:var(--text);background:rgba(226,234,248,.08)}
     a{display:flex;align-items:center;justify-content:center;min-height:72px;padding:16px 18px;border-radius:14px;background:var(--card);border:1px solid var(--border);color:var(--text);text-decoration:none;font-weight:800;transition:.2s}
     a:hover{border-color:var(--accent);box-shadow:0 0 18px rgba(79,195,247,.16);transform:translateY(-1px)}
     .sub{font-size:11px;color:var(--purple);display:block;margin-top:4px}
@@ -42,6 +46,10 @@
     <div class="grid">
       <a id="index-viewer-link" href="./trainer_viewer_6_1.html?lang=en"><span class="fr-only">Ouvrir le viewer principal</span><span class="en-only">Open the main viewer</span><span class="sub fr-only">Logs + NDS + 3DS + randomizers</span><span class="sub en-only">Logs + NDS + 3DS + randomizers</span></a>
       <a id="index-vanilla-link" href="./vanilla.html?lang=en"><span class="fr-only">Ouvrir la page vanilla</span><span class="en-only">Open the vanilla page</span><span class="sub fr-only">ROMs vanilla par jeu et par région</span><span class="sub en-only">Vanilla ROMs by game and region</span></a>
+    </div>
+    <div class="socials" aria-label="PokéFeur links">
+      <a class="discord" href="https://discord.gg/qp4U6Hb6sM" target="_blank" rel="noopener noreferrer"><span class="fr-only">Rejoindre le Discord</span><span class="en-only">Join the Discord</span></a>
+      <a class="github" href="https://github.com/JonatanUHC/PokeFeur" target="_blank" rel="noopener noreferrer"><span class="fr-only">Voir le GitHub</span><span class="en-only">View on GitHub</span></a>
     </div>
   </div>
   <script>
