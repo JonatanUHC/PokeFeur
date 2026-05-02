@@ -1,7 +1,8 @@
 # PokeFeur Trainer Viewer
 
 <div align="center">
-
+  
+[![Discord](https://img.shields.io/badge/Discord-Join_the_server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bSUKYEJE/)
 [![Website](https://img.shields.io/badge/Website-Open_PokeFeur-4FC3F7?style=for-the-badge)](https://jonatanuhc.github.io/PokeFeur/)
 [![Discord](https://img.shields.io/badge/Discord-PokeFeur_server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/qp4U6Hb6sM)
 [![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Static_site-222222?style=for-the-badge&logo=github)](https://pages.github.com/)
@@ -793,3 +794,15 @@ Pokemon est une marque de Nintendo, Game Freak et The Pokemon Company. Ce projet
 Ce dépôt ne fournit aucune ROM, aucun dump de jeu, aucun fichier protégé, aucune clé, aucun firmware et aucune instruction pour en obtenir.
 
 Utilise tes propres copies et fichiers légalement obtenus. Ne partage pas de dossiers ou archives générés contenant des données de jeu protégées.
+
+
+
+
+
+
+
+
+
+
+
+[![Discord](https://img.shields.io/badge/Discord-Join_the_server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bSUKYEJE)
